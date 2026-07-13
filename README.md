@@ -33,7 +33,7 @@ Automatically renew your PythonAnywhere free web app every 15 days using GitHub 
 
 ## Overview
 
-PythonAnywhere free tier apps expire after ~~3 months~~ **1 month** of inactivity *(updated Jan 2026)*. This bot automatically renews your web app by logging into PythonAnywhere and clicking the "Extend" button every 15 days via GitHub Actions.
+PythonAnywhere free tier apps expire after ~~3 months~~ **1 month** of inactivity _(updated Jan 2026)_. This bot automatically renews your web app by logging into PythonAnywhere and clicking the "Extend" button every 15 days via GitHub Actions.
 
 Combined with the [Weather-Monitoring-System](https://github.com/tanishqmudaliar/Weather-Monitoring-System) auto-deployment webhook, this creates a completely hands-off hosting solution that stays alive indefinitely on the free tier.
 
@@ -60,16 +60,19 @@ Day 30:  Bot auto-renews ✅
 ## Features
 
 ### Automation
+
 - Scheduled renewal on the 1st and 15th of every month (04:00 UTC / 09:30 IST)
 - Manual trigger available from GitHub Actions tab
 - Automatic log commits prevent GitHub from disabling the workflow
 
 ### Logging & Monitoring
+
 - Complete audit trail in `.github/logs/workflow_runs.log`
 - Clear SUCCESS ✅ or FAILED ❌ status indicators
 - Timestamps, run IDs, and trigger source for debugging
 
 ### Security
+
 - Credentials stored as encrypted GitHub Secrets
 - Never exposed in logs or code
 - HTTPS for all PythonAnywhere connections
@@ -78,12 +81,12 @@ Day 30:  Bot auto-renews ✅
 
 ## Tech Stack
 
-| Component | Technologies |
-|-----------|-------------|
-| **Language** | Python 3.9+ |
+| Layer         | Technologies                            |
+| ------------- | --------------------------------------- |
+| **Language**  | Python 3.9+                             |
 | **Libraries** | requests, beautifulsoup4, python-dotenv |
-| **CI/CD** | GitHub Actions |
-| **Target** | PythonAnywhere Free Tier |
+| **CI/CD**     | GitHub Actions                          |
+| **Target**    | PythonAnywhere Free Tier                |
 
 ---
 
@@ -161,8 +164,8 @@ Or click **"Use this template"** on GitHub.
 1. Go to your repository → **Settings** → **Secrets and variables** → **Actions**
 2. Click **New repository secret** and add:
 
-| Secret Name | Value |
-|-------------|-------|
+| Secret Name   | Value                        |
+| ------------- | ---------------------------- |
 | `PA_USERNAME` | Your PythonAnywhere username |
 | `PA_PASSWORD` | Your PythonAnywhere password |
 
@@ -183,11 +186,13 @@ Or click **"Use this template"** on GitHub.
 ### Local Testing
 
 1. **Install dependencies**
+
    ```bash
    pip install -r requirements.txt
    ```
 
 2. **Create `.env` file**
+
    ```env
    PA_USERNAME=your_username
    PA_PASSWORD=your_password
@@ -199,6 +204,7 @@ Or click **"Use this template"** on GitHub.
    ```
 
 Expected output:
+
 ```
 🔐 Logging in as your_username...
 ✅ Login successful
@@ -232,10 +238,10 @@ PythonAnywhere-Auto-Renew/
 
 ### Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `PA_USERNAME` | PythonAnywhere username | Yes |
-| `PA_PASSWORD` | PythonAnywhere password | Yes |
+| Variable      | Description             | Required |
+| ------------- | ----------------------- | -------- |
+| `PA_USERNAME` | PythonAnywhere username | Yes      |
+| `PA_PASSWORD` | PythonAnywhere password | Yes      |
 
 ### Schedule Customization
 
@@ -243,13 +249,13 @@ Edit `.github/workflows/renew.yml` to change the cron schedule:
 
 ```yaml
 # Current: 1st and 15th at 04:00 UTC
-- cron: '0 4 1,15 * *'
+- cron: "0 4 1,15 * *"
 
 # Alternative: Every Monday at noon UTC
-- cron: '0 12 * * 1'
+- cron: "0 12 * * 1"
 
 # Alternative: Every 10 days
-- cron: '0 4 1,11,21 * *'
+- cron: "0 4 1,11,21 * *"
 ```
 
 ---
@@ -259,6 +265,7 @@ Edit `.github/workflows/renew.yml` to change the cron schedule:
 Every run is logged to `.github/logs/workflow_runs.log`:
 
 ### Success Entry
+
 ```
 ========================================
 Workflow Run: 2026-01-15 04:00:00 UTC
@@ -272,6 +279,7 @@ Run Number: 5
 ```
 
 ### Failure Entry
+
 ```
 ========================================
 Workflow Run: 2026-01-15 04:00:00 UTC
@@ -289,12 +297,13 @@ Note: Check GitHub Actions logs for error details
 
 ## Related Repositories
 
-| Repository | Purpose |
-|------------|---------|
+| Repository                                                                                | Purpose                                       |
+| ----------------------------------------------------------------------------------------- | --------------------------------------------- |
 | [Weather-Monitoring-System](https://github.com/tanishqmudaliar/Weather-Monitoring-System) | Main weather app with auto-deployment webhook |
-| [PythonAnywhere-Auto-Renew](https://github.com/tanishqmudaliar/PythonAnywhere-Auto-Renew) | Keeps the app alive on free tier (this repo) |
+| [PythonAnywhere-Auto-Renew](https://github.com/tanishqmudaliar/PythonAnywhere-Auto-Renew) | Keeps the app alive on free tier (this repo)  |
 
 Together, these repositories provide:
+
 - Instant automated deployment on every push
 - 24/7 uptime without manual intervention
 - Zero-maintenance free-tier hosting
@@ -304,21 +313,25 @@ Together, these repositories provide:
 ## Troubleshooting
 
 ### "Login failed"
+
 - Verify `PA_USERNAME` and `PA_PASSWORD` secrets are correct
 - Try logging in manually to confirm credentials work
 - Check if PythonAnywhere changed their login page
 
 ### "No extend button found"
+
 - This is normal, your app doesn't need renewal yet
 - The button only appears when renewal is due
 - Logged as SUCCESS ✅ (not an error)
 
 ### "Workflow disabled"
+
 - GitHub disables inactive workflows after 60 days
 - This bot commits logs every 15 days to prevent this
 - Re-enable manually if needed, then run the workflow
 
 ### Log shows "FAILED ❌"
+
 - Check the GitHub Actions workflow run for detailed error logs
 - Common causes: wrong credentials, PythonAnywhere site changes
 - Workflow retries automatically on the next scheduled run
@@ -343,6 +356,6 @@ This project is open source and available under the [MIT License](LICENSE).
 
 ---
 
-Made with ❤️ for PythonAnywhere users
+Made with ❤️ by [Tanishq Mudaliar](https://github.com/tanishqmudaliar)
 
 **Stop manually clicking that extend button. Automate it! 🚀**
