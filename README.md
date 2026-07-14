@@ -70,6 +70,7 @@ Day 30:  Bot auto-renews ✅
 - Complete audit trail in `.github/logs/workflow_runs.log`
 - Clear SUCCESS ✅ or FAILED ❌ status indicators
 - Timestamps, run IDs, and trigger source for debugging
+- **Detailed summaries showing exactly which items were renewed and their old vs. new expiry dates**
 
 ### Security
 
@@ -268,13 +269,16 @@ Every run is logged to `.github/logs/workflow_runs.log`:
 
 ```
 ========================================
-Workflow Run: 2026-01-15 04:00:00 UTC
+Workflow Run: 2026-07-15 04:00:00 UTC
 Status: SUCCESS ✅
 Trigger: schedule
 Repository: username/PythonAnywhere-Auto-Renew
 Branch: main
 Run ID: 123456789
-Run Number: 5
+Run Number: 20
+Renewed Items:
+- Web App: tanishqmudaliar.pythonanywhere.com (Saturday 01 August 2026 → Tuesday 01 September 2026)
+- Task: python3 sync_logs.py (Already maxed out at: 2026-08-11)
 ========================================
 ```
 
@@ -282,14 +286,16 @@ Run Number: 5
 
 ```
 ========================================
-Workflow Run: 2026-01-15 04:00:00 UTC
+Workflow Run: 2026-07-15 04:00:00 UTC
 Status: FAILED ❌
 Trigger: schedule
 Repository: username/PythonAnywhere-Auto-Renew
 Branch: main
 Run ID: 123456790
-Run Number: 6
+Run Number: 21
 Note: Check GitHub Actions logs for error details
+Renewed Items (Partial/Failed Run):
+- Web App: tanishqmudaliar.pythonanywhere.com (Saturday 01 August 2026 → Tuesday 01 September 2026)
 ========================================
 ```
 
@@ -323,6 +329,12 @@ Together, these repositories provide:
 - This is normal, your app doesn't need renewal yet
 - The button only appears when renewal is due
 - Logged as SUCCESS ✅ (not an error)
+
+### "Task returned 200 (expiry unchanged... already maxed out)"
+
+- PythonAnywhere caps scheduled task extensions (usually a maximum of 30 days into the future).
+- If you run the bot frequently or trigger it manually, a task might already be at its maximum expiry limit.
+- The bot recognizes this and safely logs it as a SUCCESS ✅ without failing your workflow.
 
 ### "Workflow disabled"
 
