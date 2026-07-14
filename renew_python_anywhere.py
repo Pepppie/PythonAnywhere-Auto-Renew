@@ -2,6 +2,7 @@ import os
 import sys
 import requests
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 import time
 from dotenv import load_dotenv
 
@@ -14,10 +15,11 @@ if not USERNAME or not PASSWORD:
     print("❌ Error: PA_USERNAME and PA_PASSWORD must be set")
     sys.exit(1)
 
-LOGIN_URL = "https://www.pythonanywhere.com/login/"
-DASHBOARD_URL = f"https://www.pythonanywhere.com/user/{USERNAME}/webapps/"
-TASKS_PAGE_URL = f"https://www.pythonanywhere.com/user/{USERNAME}/tasks_tab/"
-TASKS_API_URL = f"https://www.pythonanywhere.com/api/v0/user/{USERNAME}/schedule/"
+BASE_URL = "https://www.pythonanywhere.com"
+LOGIN_URL = f"{BASE_URL}/login/"
+DASHBOARD_URL = f"{BASE_URL}/user/{USERNAME}/webapps/"
+TASKS_PAGE_URL = f"{BASE_URL}/user/{USERNAME}/tasks_tab/"
+TASKS_API_URL = f"{BASE_URL}/api/v0/user/{USERNAME}/schedule/"
 
 
 def login(session):
@@ -74,7 +76,7 @@ def renew_webapps(session):
     ok = True
     renewed = []
     for form in forms:
-        action = form['action']
+        action = urljoin(BASE_URL, form['action'])
         domain = action.rstrip('/').split('/webapps/')[-1].replace('/extend', '')
         csrf = form.find('input', {'name': 'csrfmiddlewaretoken'})
         if not csrf:
@@ -126,7 +128,7 @@ def renew_scheduled_tasks(session):
         if not extend_url:
             continue
         resp = session.post(
-            f"https://www.pythonanywhere.com{extend_url}",
+            urljoin(BASE_URL, extend_url),
             headers={'X-CSRFToken': csrftoken, 'Referer': TASKS_PAGE_URL},
             timeout=10
         )
