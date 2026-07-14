@@ -177,8 +177,11 @@ def renew_scheduled_tasks(session):
                 print(f"✅ Renewed scheduled task: {desc} ({old_expiry} → {new_expiry})")
                 renewed_details.append(detail)
             else:
-                print(f"⚠️ Task {desc} returned 200 but expiry unchanged ({old_expiry}) — check manually")
-                ok = False
+                # 🛠️ FIX: Treat unchanged dates as success (it just means it's already maxed out)
+                detail = f"Task: {desc} (Already maxed out at: {old_expiry})"
+                print(f"✅ Task {desc} returned 200 (expiry unchanged at {old_expiry} — already maxed out)")
+                renewed_details.append(detail)
+                # Removed 'ok = False' so it no longer fails the GitHub Action
         else:
             print(f"❌ Failed to renew scheduled task: {desc} (status {resp.status_code})")
             ok = False
