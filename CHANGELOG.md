@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-07-14
+
+### Added
+
+- Generated `renewal_summary.txt` to capture detailed logs of renewed items and their old/new expiry dates.
+- GitHub Actions workflow step to read and append the renewal summary directly into `.github/logs/workflow_runs.log`.
+
+### Changed
+
+- Web app expiry date extraction now uses robust HTML DOM parsing (via BeautifulSoup) instead of regex.
+- Scheduled tasks renewal now re-fetches the tasks API to guarantee accurate logging of the updated expiry date.
+
+### Fixed
+
+- Fixed an issue where scheduled tasks already at their maximum expiry limit caused the GitHub Actions workflow to fail. Unchanged dates are now treated as successful "maxed out" renewals.
+
 ## [1.2.1] - 2026-07-13
 
 ### Changed
@@ -42,7 +58,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.gitignore` for environment and IDE files
 - Initial README
 
-[Unreleased]: https://github.com/tanishqmudaliar/PythonAnywhere-Auto-Renew/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/tanishqmudaliar/PythonAnywhere-Auto-Renew/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/tanishqmudaliar/PythonAnywhere-Auto-Renew/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/tanishqmudaliar/PythonAnywhere-Auto-Renew/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/tanishqmudaliar/PythonAnywhere-Auto-Renew/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/tanishqmudaliar/PythonAnywhere-Auto-Renew/compare/v1.0.0...v1.1.0
