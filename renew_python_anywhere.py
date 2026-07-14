@@ -50,7 +50,6 @@ def login(session):
 
     if "Log out" not in response.text and "logout" not in response.text.lower():
         print("❌ Login failed - 'Log out' not found in response")
-        print(f"Response URL: {response.url}")
         return False
     if "login" in response.url.lower():
         print("❌ Login failed - still on login page")
@@ -58,6 +57,17 @@ def login(session):
 
     print("✅ Login successful")
     return True
+
+
+def get_webapp_expiry(soup, domain):
+    """Extracts the expiry date from the specific webapp's tab pane."""
+    pane_id = f"id_{domain.replace('.', '_')}"
+    pane = soup.find(id=pane_id)
+    if pane:
+        expiry_elem = pane.find('p', class_='webapp_expiry')
+        if expiry_elem and expiry_elem.find('strong'):
+            return expiry_elem.find('strong').text.strip()
+    return "Unknown Date"
 
 
 def renew_webapps(session):
@@ -68,36 +78,50 @@ def renew_webapps(session):
     soup = BeautifulSoup(dashboard.content, 'html.parser')
 
     forms = [f for f in soup.find_all('form', action=True) if '/extend' in f['action'].lower()]
+    renewed_details = []
 
     if not forms:
         print("ℹ️ No web apps found on this account.")
-        return True
+        return True, renewed_details
 
     ok = True
-    renewed = []
     for form in forms:
         action = urljoin(BASE_URL, form['action'])
         domain = action.rstrip('/').split('/webapps/')[-1].replace('/extend', '')
         csrf = form.find('input', {'name': 'csrfmiddlewaretoken'})
+        
         if not csrf:
             print(f"❌ No CSRF token for {domain}, skipping")
             ok = False
             continue
+
+        # Get old expiry date directly from the HTML structure
+        old_expiry = get_webapp_expiry(soup, domain)
+
         r = session.post(
             action,
             data={'csrfmiddlewaretoken': csrf['value']},
             headers={'Referer': DASHBOARD_URL},
             timeout=10
         )
+        
         if r.status_code == 200 and 'webapps' in r.url.lower():
-            print(f"✅ Renewed web app: {domain}")
-            renewed.append(domain)
+            # Fetch dashboard again to extract the New Expiry Date
+            time.sleep(1)
+            dash_after = session.get(DASHBOARD_URL, timeout=10)
+            soup_after = BeautifulSoup(dash_after.content, 'html.parser')
+            
+            new_expiry = get_webapp_expiry(soup_after, domain)
+
+            detail = f"Web App: {domain} ({old_expiry} → {new_expiry})"
+            print(f"✅ Renewed web app: {domain} ({old_expiry} → {new_expiry})")
+            renewed_details.append(detail)
         else:
             print(f"❌ Failed to renew web app: {domain} (status {r.status_code})")
             ok = False
 
-    print(f"📋 Web apps renewed: {', '.join(renewed) if renewed else 'none'}")
-    return ok
+    print(f"📋 Web apps renewed: {len(renewed_details)}")
+    return ok, renewed_details
 
 
 def renew_scheduled_tasks(session):
@@ -106,41 +130,61 @@ def renew_scheduled_tasks(session):
     csrftoken = session.cookies.get('csrftoken')
     r = session.get(TASKS_API_URL, headers={'Referer': TASKS_PAGE_URL}, timeout=10)
 
+    renewed_details = []
+
     if r.status_code != 200:
         print(f"❌ Could not fetch scheduled tasks (status {r.status_code})")
-        return False
+        return False, renewed_details
 
     try:
         tasks = r.json()
     except ValueError:
         print("❌ Scheduled tasks response was not valid JSON")
-        return False
+        return False, renewed_details
 
     if not tasks:
         print("ℹ️ No scheduled tasks found on this account.")
-        return True
+        return True, renewed_details
 
     ok = True
-    renewed = []
     for task in tasks:
         extend_url = task.get('extend_url')
         desc = task.get('command') or f"task {task.get('id')}"
+        old_expiry = task.get('expiry')
+        
         if not extend_url:
             continue
+            
         resp = session.post(
             urljoin(BASE_URL, extend_url),
             headers={'X-CSRFToken': csrftoken, 'Referer': TASKS_PAGE_URL},
             timeout=10
         )
+        
         if resp.status_code == 200:
-            print(f"✅ Renewed scheduled task: {desc}")
-            renewed.append(desc)
+            # Re-fetch task list to guarantee we get the updated expiry from the API
+            time.sleep(1)
+            r_after = session.get(TASKS_API_URL, headers={'Referer': TASKS_PAGE_URL}, timeout=10)
+            new_expiry = old_expiry
+            try:
+                tasks_after = r_after.json()
+                new_expiry = next((t.get('expiry') for t in tasks_after if t.get('id') == task.get('id')), old_expiry)
+            except ValueError:
+                pass
+                
+            if new_expiry != old_expiry:
+                detail = f"Task: {desc} ({old_expiry} → {new_expiry})"
+                print(f"✅ Renewed scheduled task: {desc} ({old_expiry} → {new_expiry})")
+                renewed_details.append(detail)
+            else:
+                print(f"⚠️ Task {desc} returned 200 but expiry unchanged ({old_expiry}) — check manually")
+                ok = False
         else:
             print(f"❌ Failed to renew scheduled task: {desc} (status {resp.status_code})")
             ok = False
 
-    print(f"📋 Scheduled tasks renewed: {', '.join(renewed) if renewed else 'none'}")
-    return ok
+    print(f"📋 Scheduled tasks renewed: {len(renewed_details)}")
+    return ok, renewed_details
 
 
 def renew():
@@ -153,8 +197,19 @@ def renew():
         if not login(session):
             return False
 
-        webapps_ok = renew_webapps(session)
-        tasks_ok = renew_scheduled_tasks(session)
+        webapps_ok, webapps_renewed = renew_webapps(session)
+        tasks_ok, tasks_renewed = renew_scheduled_tasks(session)
+        
+        all_renewed = webapps_renewed + tasks_renewed
+        
+        # Write the details to a summary file for GitHub Actions to read
+        with open("renewal_summary.txt", "w", encoding="utf-8") as f:
+            if all_renewed:
+                for item in all_renewed:
+                    f.write(f"- {item}\n")
+            else:
+                f.write("- No items required renewal today.\n")
+
         return webapps_ok and tasks_ok
 
     except requests.Timeout:
